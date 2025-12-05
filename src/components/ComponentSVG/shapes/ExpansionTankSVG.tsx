@@ -1,6 +1,12 @@
 // Expansion Tank SVG shape
 import React from 'react';
 import type { HydronicComponent } from '../../../types';
+import type { ShapePort } from '../ComponentSVG';
+
+/** Port definitions for expansion tank */
+export const EXPANSION_TANK_PORTS: ShapePort[] = [
+  { id: 'connection', type: 'general', cx: 30, cy: 60 },
+];
 
 export const ExpansionTankSVG: React.FC<{ component: HydronicComponent }> = () => (
   <g>
@@ -16,7 +22,5 @@ export const ExpansionTankSVG: React.FC<{ component: HydronicComponent }> = () =
     <text x={30} y={45} textAnchor="middle" fontSize={8} fill="#1976d2">
       Water
     </text>
-    {/* Port (bottom) */}
-    <circle cx={30} cy={60} r={5} fill="#42a5f5" stroke="#1565c0" strokeWidth={1} />
   </g>
 );

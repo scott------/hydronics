@@ -10,6 +10,20 @@ import styles from './Canvas.module.css';
 const CANVAS_WIDTH = 3000;
 const CANVAS_HEIGHT = 2000;
 
+/** Generate orthogonal preview path for pending connection */
+function generatePreviewPath(from: { x: number; y: number }, to: { x: number; y: number }): string {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const midX = from.x + dx / 2;
+  const midY = from.y + dy / 2;
+
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return `M ${from.x} ${from.y} L ${midX} ${from.y} L ${midX} ${to.y} L ${to.x} ${to.y}`;
+  } else {
+    return `M ${from.x} ${from.y} L ${from.x} ${midY} L ${to.x} ${midY} L ${to.x} ${to.y}`;
+  }
+}
+
 export const Canvas: React.FC = () => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,6 +42,9 @@ export const Canvas: React.FC = () => {
   const setSelection = useStore((s) => s.setSelection);
   const clearSelection = useStore((s) => s.clearSelection);
   const moveComponent = useStore((s) => s.moveComponent);
+  const pendingConnection = useStore((s) => s.ui.pendingConnection);
+  const updatePipeConnectionMouse = useStore((s) => s.updatePipeConnectionMouse);
+  const cancelPipeConnection = useStore((s) => s.cancelPipeConnection);
 
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
@@ -57,18 +74,26 @@ export const Canvas: React.FC = () => {
 
   const movePan = useCallback(
     (e: React.MouseEvent) => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      // Update pending connection mouse position
+      if (pendingConnection) {
+        const mx = (e.clientX - rect.left - panOffset.x) / zoom;
+        const my = (e.clientY - rect.top - panOffset.y) / zoom;
+        updatePipeConnectionMouse({ x: mx, y: my });
+      }
+
       if (isPanning) {
         setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
       }
       if (dragId) {
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (!rect) return;
         const x = (e.clientX - rect.left - panOffset.x) / zoom;
         const y = (e.clientY - rect.top - panOffset.y) / zoom;
         moveComponent(dragId, { x: x - dragStart.x, y: y - dragStart.y });
       }
     },
-    [isPanning, panStart, setPan, dragId, dragStart, panOffset, zoom, moveComponent]
+    [isPanning, panStart, setPan, dragId, dragStart, panOffset, zoom, moveComponent, pendingConnection, updatePipeConnectionMouse]
   );
 
   const endPan = useCallback(() => {
@@ -76,19 +101,30 @@ export const Canvas: React.FC = () => {
     setDragId(null);
   }, []);
 
-  // Click on canvas background clears selection
+  // Click on canvas background clears selection or cancels pending connection
   const handleCanvasClick = useCallback(
     (e: React.MouseEvent) => {
       if ((e.target as Element).tagName === 'svg' || (e.target as Element).classList.contains(styles.grid)) {
-        clearSelection();
+        if (pendingConnection) {
+          cancelPipeConnection();
+        } else {
+          clearSelection();
+        }
       }
     },
-    [clearSelection]
+    [clearSelection, pendingConnection, cancelPipeConnection]
   );
 
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (useStore.getState().ui.pendingConnection) {
+          cancelPipeConnection();
+        } else {
+          clearSelection();
+        }
+      }
       if (e.key === 'Delete' || e.key === 'Backspace') {
         selectedIds.forEach((id) => {
           useStore.getState().removeComponent(id);
@@ -99,7 +135,7 @@ export const Canvas: React.FC = () => {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedIds, clearSelection]);
+  }, [selectedIds, clearSelection, cancelPipeConnection]);
 
   // Component drag start from within canvas
   const handleComponentMouseDown = useCallback(
@@ -166,6 +202,35 @@ export const Canvas: React.FC = () => {
           ))}
         </g>
 
+        {/* Pending connection preview */}
+        {pendingConnection && (
+          <g className="pending-connection">
+            <path
+              d={generatePreviewPath(
+                pendingConnection.fromPosition,
+                pendingConnection.currentMousePosition
+              )}
+              fill="none"
+              stroke="#ff9800"
+              strokeWidth={3}
+              strokeDasharray="8 4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={0.8}
+              pointerEvents="none"
+            />
+            {/* End cursor indicator */}
+            <circle
+              cx={pendingConnection.currentMousePosition.x}
+              cy={pendingConnection.currentMousePosition.y}
+              r={6}
+              fill="#ff9800"
+              opacity={0.6}
+              pointerEvents="none"
+            />
+          </g>
+        )}
+
         {/* Components layer */}
         <g className="components">
           {Object.values(components)
@@ -175,7 +240,7 @@ export const Canvas: React.FC = () => {
                 key={comp.id}
                 component={comp}
                 selected={selectedIds.includes(comp.id)}
-                onMouseDown={(e) => handleComponentMouseDown(comp.id, e)}
+                onMouseDown={(e: React.MouseEvent) => handleComponentMouseDown(comp.id, e)}
               />
             ))}
         </g>

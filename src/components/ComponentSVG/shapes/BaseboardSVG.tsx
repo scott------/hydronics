@@ -1,6 +1,15 @@
 // Baseboard SVG shape
 import React from 'react';
 import type { HydronicComponent, BaseboardComponent } from '../../../types';
+import type { ShapePort } from '../ComponentSVG';
+
+/** Get port definitions for baseboard (width varies with length) */
+export function getBaseboardPorts(width: number): ShapePort[] {
+  return [
+    { id: 'supply', type: 'supply', cx: 0, cy: 30 },
+    { id: 'return', type: 'return', cx: width, cy: 30 },
+  ];
+}
 
 export const BaseboardSVG: React.FC<{ component: HydronicComponent }> = ({ component }) => {
   const props = (component as BaseboardComponent).props;
@@ -21,10 +30,6 @@ export const BaseboardSVG: React.FC<{ component: HydronicComponent }> = ({ compo
           strokeWidth={1}
         />
       ))}
-      {/* Supply port (left) */}
-      <circle cx={0} cy={30} r={5} fill="#ef5350" stroke="#b71c1c" strokeWidth={1} />
-      {/* Return port (right) */}
-      <circle cx={width} cy={30} r={5} fill="#42a5f5" stroke="#1565c0" strokeWidth={1} />
     </g>
   );
 };

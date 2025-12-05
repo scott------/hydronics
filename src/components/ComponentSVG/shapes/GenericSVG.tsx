@@ -1,6 +1,13 @@
 // Generic fallback SVG shape
 import React from 'react';
 import type { HydronicComponent } from '../../../types';
+import type { ShapePort } from '../ComponentSVG';
+
+/** Port definitions for generic component */
+export const GENERIC_PORTS: ShapePort[] = [
+  { id: 'left', type: 'general', cx: 0, cy: 30 },
+  { id: 'right', type: 'general', cx: 60, cy: 30 },
+];
 
 export const GenericSVG: React.FC<{ component: HydronicComponent }> = ({ component }) => (
   <g>
@@ -8,8 +15,5 @@ export const GenericSVG: React.FC<{ component: HydronicComponent }> = ({ compone
     <text x={30} y={35} textAnchor="middle" fontSize={9} fill="#616161">
       {component.type.slice(0, 8)}
     </text>
-    {/* Generic ports */}
-    <circle cx={0} cy={30} r={5} fill="#bdbdbd" stroke="#757575" strokeWidth={1} />
-    <circle cx={60} cy={30} r={5} fill="#bdbdbd" stroke="#757575" strokeWidth={1} />
   </g>
 );

@@ -377,6 +377,14 @@ export interface SimulationState {
 
 export type Tool = 'select' | 'pan' | 'pipe' | 'delete';
 
+/** State for an in-progress pipe connection */
+export interface PendingConnection {
+  fromComponentId: string;
+  fromPortId: string;
+  fromPosition: Position;
+  currentMousePosition: Position;
+}
+
 export interface UIState {
   tool: Tool;
   selectedIds: string[];
@@ -385,6 +393,7 @@ export interface UIState {
   gridSize: number;
   showGrid: boolean;
   snapToGrid: boolean;
+  pendingConnection: PendingConnection | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

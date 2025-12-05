@@ -9,6 +9,7 @@ Interactive React + TypeScript + SVG application for designing, configuring, and
 
 ## ✨ Features (MVP)
 
+- **Interactive Demo System** – Pre-built 2-zone hydronic system that starts running on first launch
 - **SVG Canvas** – Pan/zoom, snap-to-grid, drag-and-drop components
 - **Component Palette** – Boilers, pumps, baseboards, radiant floors, valves, expansion tanks, and more
 - **Building Configuration** – Climate, envelope, insulation, windows/doors, infiltration inputs
@@ -17,6 +18,15 @@ Interactive React + TypeScript + SVG application for designing, configuring, and
 - **Properties Panel** – Edit component properties; view system summary with recommended boiler size
 - **Validation** – Warnings for missing safety items, unconnected components
 - **Persistence** – Save/load designs to JSON (localStorage + file export/import)
+
+## 🎯 Demo System
+
+The application launches with a realistic 2-zone hydronic heating system already configured and **running**:
+
+- **Zone 1 (Living Room & Kitchen)** – Two 8ft and 6ft baseboards connected in **series**
+- **Zone 2 (Master Bedroom)** – Radiant floor heating in a **parallel** configuration
+- **Components included**: 95% condensing gas boiler, primary circulator pump, microbubble air separator, 4.4-gallon expansion tank, 2-way zone valves
+- **Simulation running**: Watch temperatures and flow rates animate on startup
 
 ## 🚀 Quick Start
 

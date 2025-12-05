@@ -17,41 +17,51 @@ import type {
   Position,
   Tool,
 } from '../types';
+import {
+  demoBuildingConfig,
+  demoZones,
+  demoComponents,
+  demoPipes,
+  demoConnections,
+  demoSimulationState,
+} from './demoSystem';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: Generate orthogonal (right-angle) path between two points
+// ─────────────────────────────────────────────────────────────────────────────
+function generateOrthogonalPath(from: Position, to: Position): Position[] {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+
+  // Simple L-shaped or Z-shaped routing
+  // Go horizontal first, then vertical (or vice versa depending on relative positions)
+  const midX = from.x + dx / 2;
+  const midY = from.y + dy / 2;
+
+  // If points are mostly horizontal, do horizontal-vertical
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return [
+      { x: from.x, y: from.y },
+      { x: midX, y: from.y },
+      { x: midX, y: to.y },
+      { x: to.x, y: to.y },
+    ];
+  } else {
+    // Mostly vertical, do vertical-horizontal
+    return [
+      { x: from.x, y: from.y },
+      { x: from.x, y: midY },
+      { x: to.x, y: midY },
+      { x: to.x, y: to.y },
+    ];
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Default values
 // ─────────────────────────────────────────────────────────────────────────────
 
-const defaultBuilding: BuildingConfig = {
-  climate: {
-    designOutdoorTemp: 0,
-    indoorDesignTemp: 70,
-    heatingDegreeDays: 5000,
-    climateZone: 5,
-  },
-  totalSqFt: 2000,
-  floors: 1,
-  ceilingHeight: 8,
-  foundationType: 'basement',
-  constructionEra: '2000+',
-  insulation: {
-    walls: 13,
-    ceiling: 38,
-    floor: 19,
-    basementWalls: 10,
-  },
-  windowDoor: {
-    totalWindowArea: 200,
-    windowUValue: 0.3,
-    exteriorDoorCount: 2,
-    doorUValue: 0.5,
-    doorArea: 20,
-  },
-  infiltration: {
-    ach: 0.35,
-    blowerDoorCFM50: null,
-  },
-};
+const defaultBuilding: BuildingConfig = demoBuildingConfig;
 
 const defaultUI: UIState = {
   tool: 'select',
@@ -61,18 +71,10 @@ const defaultUI: UIState = {
   gridSize: 20,
   showGrid: true,
   snapToGrid: true,
+  pendingConnection: null,
 };
 
-const defaultSimulation: SimulationState = {
-  settings: {
-    running: false,
-    paused: false,
-    timeScale: 1,
-    outdoorTemp: 30,
-    elapsedSeconds: 0,
-  },
-  componentStates: {},
-};
+const defaultSimulation: SimulationState = demoSimulationState;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Actions interface
@@ -118,6 +120,12 @@ interface Actions {
   toggleGrid: () => void;
   toggleSnap: () => void;
 
+  // Pipe connection
+  startPipeConnection: (componentId: string, portId: string, position: Position) => void;
+  updatePipeConnectionMouse: (position: Position) => void;
+  completePipeConnection: (toComponentId: string, toPortId: string, toPosition: Position) => void;
+  cancelPipeConnection: () => void;
+
   // Simulation
   startSimulation: () => void;
   pauseSimulation: () => void;
@@ -128,6 +136,7 @@ interface Actions {
 
   // Persistence
   resetState: () => void;
+  clearState: () => void; // For testing - clears to empty state
   loadState: (state: Partial<SystemState>) => void;
 }
 
@@ -140,12 +149,12 @@ export type StoreState = SystemState & Actions;
 export const useStore = create<StoreState>()(
   persist(
     immer((set, get) => ({
-      // Initial state
+      // Initial state - use demo system for first-time users
       building: defaultBuilding,
-      zones: [],
-      components: {},
-      pipes: {},
-      connections: [],
+      zones: demoZones,
+      components: demoComponents,
+      pipes: demoPipes,
+      connections: demoConnections,
       simulation: defaultSimulation,
       ui: defaultUI,
 
@@ -301,6 +310,87 @@ export const useStore = create<StoreState>()(
           s.ui.snapToGrid = !s.ui.snapToGrid;
         }),
 
+      // ─── Pipe Connection ───────────────────────────────────────────────────
+      startPipeConnection: (componentId, portId, position) =>
+        set((s) => {
+          s.ui.pendingConnection = {
+            fromComponentId: componentId,
+            fromPortId: portId,
+            fromPosition: position,
+            currentMousePosition: position,
+          };
+        }),
+      updatePipeConnectionMouse: (position) =>
+        set((s) => {
+          if (s.ui.pendingConnection) {
+            s.ui.pendingConnection.currentMousePosition = position;
+          }
+        }),
+      completePipeConnection: (toComponentId, toPortId, toPosition) => {
+        const state = get();
+        const pending = state.ui.pendingConnection;
+        if (!pending) return;
+
+        // Don't connect to the same component/port
+        if (
+          pending.fromComponentId === toComponentId &&
+          pending.fromPortId === toPortId
+        ) {
+          set((s) => {
+            s.ui.pendingConnection = null;
+          });
+          return;
+        }
+
+        // Determine pipe type based on port types
+        const fromComp = state.components[pending.fromComponentId];
+        const fromPort = fromComp?.ports?.find((p) => p.id === pending.fromPortId);
+        const pipeType = fromPort?.type === 'supply' ? 'supply' : 'return';
+
+        // Generate orthogonal waypoints
+        const waypoints = generateOrthogonalPath(pending.fromPosition, toPosition);
+
+        // Create the pipe
+        const pipeId = uuid();
+        set((s) => {
+          s.pipes[pipeId] = {
+            id: pipeId,
+            material: 'copper',
+            size: '3/4',
+            lengthFt: 0, // Calculated later
+            pipeType,
+            insulation: 'none',
+            fittings: {
+              elbows90: waypoints.length - 2, // Each turn is a 90° elbow
+              elbows45: 0,
+              teesThrough: 0,
+              teesBranch: 0,
+              couplings: 0,
+            },
+            waypoints,
+            startPortId: `${pending.fromComponentId}.${pending.fromPortId}`,
+            endPortId: `${toComponentId}.${toPortId}`,
+          };
+
+          // Create connection record
+          s.connections.push({
+            id: uuid(),
+            pipeId,
+            fromComponentId: pending.fromComponentId,
+            fromPortId: pending.fromPortId,
+            toComponentId,
+            toPortId,
+          });
+
+          // Clear pending connection
+          s.ui.pendingConnection = null;
+        });
+      },
+      cancelPipeConnection: () =>
+        set((s) => {
+          s.ui.pendingConnection = null;
+        }),
+
       // ─── Simulation ────────────────────────────────────────────────────────
       startSimulation: () =>
         set((s) => {
@@ -338,11 +428,30 @@ export const useStore = create<StoreState>()(
       resetState: () =>
         set((s) => {
           s.building = defaultBuilding;
+          s.zones = demoZones;
+          s.components = demoComponents;
+          s.pipes = demoPipes;
+          s.connections = demoConnections;
+          s.simulation = defaultSimulation;
+          s.ui = defaultUI;
+        }),
+      clearState: () =>
+        set((s) => {
+          s.building = demoBuildingConfig;
           s.zones = [];
           s.components = {};
           s.pipes = {};
           s.connections = [];
-          s.simulation = defaultSimulation;
+          s.simulation = {
+            settings: {
+              running: false,
+              paused: false,
+              timeScale: 1,
+              outdoorTemp: 30,
+              elapsedSeconds: 0,
+            },
+            componentStates: {},
+          };
           s.ui = defaultUI;
         }),
       loadState: (state) =>

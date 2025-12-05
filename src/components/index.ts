@@ -3,6 +3,7 @@ export { ZoneList } from './ZoneList';
 export { Canvas } from './Canvas';
 export { ComponentSVG } from './ComponentSVG';
 export { PipeSVG } from './PipeSVG';
+export { PortCircle } from './PortCircle';
 export { Palette } from './Palette';
 export { PropertiesPanel } from './PropertiesPanel';
 export { Toolbar } from './Toolbar';

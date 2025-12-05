@@ -1,6 +1,13 @@
 // Radiant Floor Zone SVG shape
 import React from 'react';
 import type { HydronicComponent } from '../../../types';
+import type { ShapePort } from '../ComponentSVG';
+
+/** Port definitions for radiant floor */
+export const RADIANT_FLOOR_PORTS: ShapePort[] = [
+  { id: 'supply', type: 'supply', cx: 10, cy: 0 },
+  { id: 'return', type: 'return', cx: 70, cy: 60 },
+];
 
 export const RadiantFloorSVG: React.FC<{ component: HydronicComponent }> = () => (
   <g>
@@ -13,9 +20,5 @@ export const RadiantFloorSVG: React.FC<{ component: HydronicComponent }> = () =>
       stroke="#ef6c00"
       strokeWidth={2}
     />
-    {/* Supply port (top-left) */}
-    <circle cx={10} cy={0} r={5} fill="#ef5350" stroke="#b71c1c" strokeWidth={1} />
-    {/* Return port (bottom-left) */}
-    <circle cx={70} cy={60} r={5} fill="#42a5f5" stroke="#1565c0" strokeWidth={1} />
   </g>
 );

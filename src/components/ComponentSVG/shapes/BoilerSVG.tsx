@@ -1,6 +1,13 @@
 // Boiler SVG shape
 import React from 'react';
 import type { HydronicComponent } from '../../../types';
+import type { ShapePort } from '../ComponentSVG';
+
+/** Port definitions for boiler component */
+export const BOILER_PORTS: ShapePort[] = [
+  { id: 'supply', type: 'supply', cx: 15, cy: 0 },
+  { id: 'return', type: 'return', cx: 65, cy: 0 },
+];
 
 export const BoilerSVG: React.FC<{ component: HydronicComponent }> = () => (
   <g>
@@ -13,9 +20,5 @@ export const BoilerSVG: React.FC<{ component: HydronicComponent }> = () => (
       stroke="#ff9800"
       strokeWidth={2}
     />
-    {/* Supply port (top-left) */}
-    <circle cx={15} cy={0} r={5} fill="#ef5350" stroke="#b71c1c" strokeWidth={1} />
-    {/* Return port (top-right) */}
-    <circle cx={65} cy={0} r={5} fill="#42a5f5" stroke="#1565c0" strokeWidth={1} />
   </g>
 );
