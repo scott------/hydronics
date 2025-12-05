@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Toolbar – file ops, tool selection, view options
+// Toolbar – file ops, tool selection, view options, simulation controls
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useRef } from 'react';
 import { useStore } from '../../store';
@@ -11,6 +11,8 @@ export const Toolbar: React.FC = () => {
   const zoom = useStore((s) => s.ui.zoom);
   const showGrid = useStore((s) => s.ui.showGrid);
   const snapToGrid = useStore((s) => s.ui.snapToGrid);
+  const simRunning = useStore((s) => s.simulation.settings.running);
+  const simPaused = useStore((s) => s.simulation.settings.paused);
 
   const setTool = useStore((s) => s.setTool);
   const setZoom = useStore((s) => s.setZoom);
@@ -18,6 +20,9 @@ export const Toolbar: React.FC = () => {
   const toggleSnap = useStore((s) => s.toggleSnap);
   const resetState = useStore((s) => s.resetState);
   const loadState = useStore((s) => s.loadState);
+  const startSimulation = useStore((s) => s.startSimulation);
+  const pauseSimulation = useStore((s) => s.pauseSimulation);
+  const stopSimulation = useStore((s) => s.stopSimulation);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -54,6 +59,13 @@ export const Toolbar: React.FC = () => {
     e.target.value = '';
   };
 
+  const handleLoadDemo = () => {
+    if (confirm('Load demo system? This will replace your current design.')) {
+      resetState();
+      startSimulation();
+    }
+  };
+
   const tools: { key: Tool; label: string }[] = [
     { key: 'select', label: '⬚ Select' },
     { key: 'pan', label: '✋ Pan' },
@@ -65,7 +77,7 @@ export const Toolbar: React.FC = () => {
       <div className={styles.group}>
         <button onClick={() => fileInputRef.current?.click()}>📂 Open</button>
         <button onClick={handleExport}>💾 Save</button>
-        <button onClick={() => confirm('Reset all?') && resetState()}>🗑 New</button>
+        <button onClick={handleLoadDemo}>🏠 Demo</button>
         <input
           ref={fileInputRef}
           type="file"
@@ -106,6 +118,22 @@ export const Toolbar: React.FC = () => {
         <label>
           <input type="checkbox" checked={snapToGrid} onChange={toggleSnap} /> Snap
         </label>
+      </div>
+
+      <div className={styles.divider} />
+
+      <div className={styles.group}>
+        {!simRunning ? (
+          <button onClick={startSimulation} className={styles.simStart}>▶ Run</button>
+        ) : simPaused ? (
+          <button onClick={startSimulation} className={styles.simStart}>▶ Resume</button>
+        ) : (
+          <button onClick={pauseSimulation} className={styles.simPause}>⏸ Pause</button>
+        )}
+        <button onClick={stopSimulation} disabled={!simRunning} className={styles.simStop}>⏹ Stop</button>
+        <span className={styles.simStatus}>
+          {simRunning ? (simPaused ? '⏸ Paused' : '🔴 Running') : '⏹ Stopped'}
+        </span>
       </div>
     </div>
   );

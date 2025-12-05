@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // App – main shell wiring all components together
 // ─────────────────────────────────────────────────────────────────────────────
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Toolbar,
   Palette,
@@ -26,8 +26,20 @@ const App: React.FC = () => {
   const addComponent = useStore((s) => s.addComponent);
   const panOffset = useStore((s) => s.ui.panOffset);
   const zoom = useStore((s) => s.ui.zoom);
+  const components = useStore((s) => s.components);
+  const simulationRunning = useStore((s) => s.simulation.settings.running);
+  const startSimulation = useStore((s) => s.startSimulation);
 
   const [leftTab, setLeftTab] = useState<'palette' | 'building'>('palette');
+
+  // Auto-start simulation when demo system is loaded
+  useEffect(() => {
+    // If we have demo components and simulation isn't running, start it
+    const hasComponents = Object.keys(components).length > 0;
+    if (hasComponents && !simulationRunning) {
+      startSimulation();
+    }
+  }, []); // Run only on mount
 
   // Handle drop from palette
   const handleDrop = useCallback(
