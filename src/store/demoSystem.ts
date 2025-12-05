@@ -608,31 +608,34 @@ for (let i = 0; i < zone2Row2Rads.length; i++) {
   ], 'supply');
 }
 
-// Return piping for Zone 2
+// Return piping for Zone 2 - connect all returns to a shared return header
 const allZone2Rads = [...zone2Row1Rads, ...zone2Row2Rads];
 const allZone2Lengths = [...zone2Row1Lengths, ...zone2Row2Lengths];
 
+// First create connections from each radiator return to the return header
 for (let i = 0; i < allZone2Rads.length; i++) {
   const radId = allZone2Rads[i];
   const length = allZone2Lengths[i];
   const radReturnPos = getPortPos(radId, getRadReturnX(length), PORT.radSupply.y);
   
   if (i === 0) {
-    // First radiator return connects to boiler
+    // First radiator's return carries combined flow back to boiler
     addPipeAndConnection(radId, 'return', IDS.boiler, 'return', [
       radReturnPos,
-      { x: radReturnPos.x + 20, y: radReturnPos.y },
-      { x: radReturnPos.x + 20, y: zone2ReturnHeaderY },
+      { x: radReturnPos.x + 30, y: radReturnPos.y },
+      { x: radReturnPos.x + 30, y: zone2ReturnHeaderY },
       { x: boilerReturnPos.x, y: zone2ReturnHeaderY },
       { x: boilerReturnPos.x, y: RETURN_HEADER_Y },
       boilerReturnPos,
     ], 'return');
   } else {
-    // Other returns connect to return header
+    // Other radiators connect to the return header horizontally then merge
+    const firstReturnX = getPortPos(allZone2Rads[0], getRadReturnX(allZone2Lengths[0]), PORT.radSupply.y).x + 30;
     addPipeAndConnection(radId, 'return', allZone2Rads[0], 'return', [
       radReturnPos,
-      { x: radReturnPos.x + 20, y: radReturnPos.y },
-      { x: radReturnPos.x + 20, y: zone2ReturnHeaderY },
+      { x: radReturnPos.x + 30, y: radReturnPos.y },
+      { x: radReturnPos.x + 30, y: zone2ReturnHeaderY },
+      { x: firstReturnX, y: zone2ReturnHeaderY },
     ], 'return');
   }
 }
@@ -693,7 +696,7 @@ for (let i = 0; i < zone3Row2Rads.length; i++) {
   ], 'supply');
 }
 
-// Return piping for Zone 3
+// Return piping for Zone 3 - connect all returns to a shared return header
 const allZone3Rads = [...zone3Row1Rads, ...zone3Row2Rads];
 const allZone3Lengths = [...zone3Row1Lengths, ...zone3Row2Lengths];
 
@@ -703,19 +706,23 @@ for (let i = 0; i < allZone3Rads.length; i++) {
   const radReturnPos = getPortPos(radId, getRadReturnX(length), PORT.radSupply.y);
   
   if (i === 0) {
+    // First radiator's return carries combined flow back to boiler
     addPipeAndConnection(radId, 'return', IDS.boiler, 'return', [
       radReturnPos,
-      { x: radReturnPos.x + 20, y: radReturnPos.y },
-      { x: radReturnPos.x + 20, y: zone3ReturnHeaderY },
+      { x: radReturnPos.x + 30, y: radReturnPos.y },
+      { x: radReturnPos.x + 30, y: zone3ReturnHeaderY },
       { x: boilerReturnPos.x, y: zone3ReturnHeaderY },
       { x: boilerReturnPos.x, y: RETURN_HEADER_Y },
       boilerReturnPos,
     ], 'return');
   } else {
+    // Other radiators connect to the return header horizontally then merge
+    const firstReturnX = getPortPos(allZone3Rads[0], getRadReturnX(allZone3Lengths[0]), PORT.radSupply.y).x + 30;
     addPipeAndConnection(radId, 'return', allZone3Rads[0], 'return', [
       radReturnPos,
-      { x: radReturnPos.x + 20, y: radReturnPos.y },
-      { x: radReturnPos.x + 20, y: zone3ReturnHeaderY },
+      { x: radReturnPos.x + 30, y: radReturnPos.y },
+      { x: radReturnPos.x + 30, y: zone3ReturnHeaderY },
+      { x: firstReturnX, y: zone3ReturnHeaderY },
     ], 'return');
   }
 }

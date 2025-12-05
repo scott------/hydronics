@@ -58,6 +58,75 @@ function generateOrthogonalPath(from: Position, to: Position): Position[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Helper: Get port offset for a component type and port ID
+// ─────────────────────────────────────────────────────────────────────────────
+interface PortOffset {
+  x: number;
+  y: number;
+}
+
+function getPortOffset(component: HydronicComponent, portId: string): PortOffset {
+  // Default port offsets based on component type
+  const portOffsets: Record<string, Record<string, PortOffset>> = {
+    boiler_gas: { supply: { x: 15, y: 0 }, return: { x: 65, y: 0 } },
+    boiler_oil: { supply: { x: 15, y: 0 }, return: { x: 65, y: 0 } },
+    boiler_electric: { supply: { x: 15, y: 0 }, return: { x: 65, y: 0 } },
+    pump_fixed: { inlet: { x: 0, y: 30 }, outlet: { x: 60, y: 30 } },
+    pump_variable: { inlet: { x: 0, y: 30 }, outlet: { x: 60, y: 30 } },
+    zone_pump: { inlet: { x: 0, y: 30 }, outlet: { x: 60, y: 30 } },
+    air_separator: { left: { x: 0, y: 30 }, right: { x: 60, y: 30 } },
+    expansion_tank: { connection: { x: 30, y: 60 } },
+    zone_valve_2way: { inlet: { x: 0, y: 30 }, outlet: { x: 60, y: 30 } },
+    zone_valve_3way: { inlet: { x: 0, y: 30 }, outlet: { x: 60, y: 30 } },
+    radiant_floor: { supply: { x: 10, y: 0 }, return: { x: 70, y: 60 } },
+  };
+
+  // For baseboards, calculate based on length
+  if (component.type === 'baseboard') {
+    const props = component.props as { lengthFt?: number };
+    const width = Math.min(200, Math.max(60, (props?.lengthFt ?? 4) * 15));
+    if (portId === 'supply') return { x: 0, y: 30 };
+    if (portId === 'return') return { x: width, y: 30 };
+  }
+
+  const typeOffsets = portOffsets[component.type];
+  if (typeOffsets && typeOffsets[portId]) {
+    return typeOffsets[portId];
+  }
+
+  // Default fallback
+  if (portId === 'supply' || portId === 'left' || portId === 'inlet') {
+    return { x: 0, y: 30 };
+  }
+  return { x: 60, y: 30 };
+}
+
+// Helper: Calculate absolute port position with rotation/flip
+function getAbsolutePortPosition(
+  component: HydronicComponent,
+  portId: string
+): Position {
+  const offset = getPortOffset(component, portId);
+  let { x: cx, y: cy } = offset;
+
+  // Apply flips
+  if (component.flippedH) cx = -cx;
+  if (component.flippedV) cy = -cy;
+
+  // Apply rotation
+  const rad = (component.rotation * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const rx = cx * cos - cy * sin;
+  const ry = cx * sin + cy * cos;
+
+  return {
+    x: component.position.x + rx,
+    y: component.position.y + ry,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Default values
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -198,7 +267,13 @@ export const useStore = create<StoreState>()(
       removeComponent: (id) =>
         set((s) => {
           delete s.components[id];
-          // Remove related connections
+          // Remove related connections and their pipes
+          const connectionsToRemove = s.connections.filter(
+            (c) => c.fromComponentId === id || c.toComponentId === id
+          );
+          for (const conn of connectionsToRemove) {
+            delete s.pipes[conn.pipeId];
+          }
           s.connections = s.connections.filter(
             (c) => c.fromComponentId !== id && c.toComponentId !== id
           );
@@ -211,12 +286,45 @@ export const useStore = create<StoreState>()(
               x: Math.round(position.x / snap) * snap,
               y: Math.round(position.y / snap) * snap,
             };
+
+            // Update all connected pipes
+            for (const conn of s.connections) {
+              const pipe = s.pipes[conn.pipeId];
+              if (!pipe) continue;
+
+              // Check if this component is involved in the connection
+              if (conn.fromComponentId === id || conn.toComponentId === id) {
+                const fromComp = s.components[conn.fromComponentId];
+                const toComp = s.components[conn.toComponentId];
+                if (fromComp && toComp) {
+                  const fromPos = getAbsolutePortPosition(fromComp, conn.fromPortId);
+                  const toPos = getAbsolutePortPosition(toComp, conn.toPortId);
+                  pipe.waypoints = generateOrthogonalPath(fromPos, toPos);
+                }
+              }
+            }
           }
         }),
       rotateComponent: (id, degrees) =>
         set((s) => {
           if (s.components[id]) {
             s.components[id].rotation = (s.components[id].rotation + degrees) % 360;
+
+            // Update all connected pipes
+            for (const conn of s.connections) {
+              const pipe = s.pipes[conn.pipeId];
+              if (!pipe) continue;
+
+              if (conn.fromComponentId === id || conn.toComponentId === id) {
+                const fromComp = s.components[conn.fromComponentId];
+                const toComp = s.components[conn.toComponentId];
+                if (fromComp && toComp) {
+                  const fromPos = getAbsolutePortPosition(fromComp, conn.fromPortId);
+                  const toPos = getAbsolutePortPosition(toComp, conn.toPortId);
+                  pipe.waypoints = generateOrthogonalPath(fromPos, toPos);
+                }
+              }
+            }
           }
         }),
       flipComponent: (id, axis) =>
@@ -224,6 +332,22 @@ export const useStore = create<StoreState>()(
           if (s.components[id]) {
             if (axis === 'h') s.components[id].flippedH = !s.components[id].flippedH;
             else s.components[id].flippedV = !s.components[id].flippedV;
+
+            // Update all connected pipes
+            for (const conn of s.connections) {
+              const pipe = s.pipes[conn.pipeId];
+              if (!pipe) continue;
+
+              if (conn.fromComponentId === id || conn.toComponentId === id) {
+                const fromComp = s.components[conn.fromComponentId];
+                const toComp = s.components[conn.toComponentId];
+                if (fromComp && toComp) {
+                  const fromPos = getAbsolutePortPosition(fromComp, conn.fromPortId);
+                  const toPos = getAbsolutePortPosition(toComp, conn.toPortId);
+                  pipe.waypoints = generateOrthogonalPath(fromPos, toPos);
+                }
+              }
+            }
           }
         }),
       bringToFront: (id) =>
