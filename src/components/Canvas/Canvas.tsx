@@ -7,6 +7,62 @@ import { ComponentSVG } from '../ComponentSVG';
 import { PipeSVG } from '../PipeSVG';
 import styles from './Canvas.module.css';
 
+// Animation keyframe styles injected into SVG
+const AnimationStyles = () => (
+  <style>
+    {`
+      @keyframes flowSupply {
+        from { stroke-dashoffset: 24; }
+        to { stroke-dashoffset: 0; }
+      }
+      @keyframes flowReturn {
+        from { stroke-dashoffset: 0; }
+        to { stroke-dashoffset: 24; }
+      }
+      @keyframes pumpRotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes flameFlicker {
+        0%, 100% { opacity: 1; transform: scaleY(1); }
+        25% { opacity: 0.8; transform: scaleY(1.1); }
+        50% { opacity: 1; transform: scaleY(0.9); }
+        75% { opacity: 0.9; transform: scaleY(1.05); }
+      }
+      @keyframes heatWave {
+        0%, 100% { opacity: 0.3; transform: translateY(0); }
+        50% { opacity: 0.6; transform: translateY(-3px); }
+      }
+      @keyframes valvePulse {
+        0%, 100% { fill-opacity: 0.8; }
+        50% { fill-opacity: 1; }
+      }
+      .flow-supply {
+        stroke-dasharray: 12 12;
+        animation: flowSupply 0.5s linear infinite;
+      }
+      .flow-return {
+        stroke-dasharray: 12 12;
+        animation: flowReturn 0.5s linear infinite;
+      }
+      .pump-impeller-spinning {
+        transform-origin: 30px 30px;
+        animation: pumpRotate 0.5s linear infinite;
+      }
+      .flame-active {
+        transform-origin: 40px 35px;
+        animation: flameFlicker 0.3s ease-in-out infinite;
+      }
+      .heat-wave {
+        animation: heatWave 1s ease-in-out infinite;
+      }
+      .valve-open {
+        animation: valvePulse 1s ease-in-out infinite;
+      }
+    `}
+  </style>
+);
+
 const CANVAS_WIDTH = 3000;
 const CANVAS_HEIGHT = 2000;
 
@@ -36,6 +92,12 @@ export const Canvas: React.FC = () => {
   const selectedIds = useStore((s) => s.ui.selectedIds);
   const components = useStore((s) => s.components);
   const pipes = useStore((s) => s.pipes);
+  const simulationRunning = useStore((s) => s.simulation.settings.running);
+  const simulationPaused = useStore((s) => s.simulation.settings.paused);
+  const componentStates = useStore((s) => s.simulation.componentStates);
+  
+  // Simulation is active when running and not paused
+  const simActive = simulationRunning && !simulationPaused;
 
   const setZoom = useStore((s) => s.setZoom);
   const setPan = useStore((s) => s.setPan);
@@ -191,6 +253,7 @@ export const Canvas: React.FC = () => {
         onClick={handleCanvasClick}
       >
         {gridPattern}
+        <AnimationStyles />
         {showGrid && (
           <rect className={styles.grid} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} fill="url(#grid)" />
         )}
@@ -198,7 +261,7 @@ export const Canvas: React.FC = () => {
         {/* Pipes layer */}
         <g className="pipes">
           {Object.values(pipes).map((pipe) => (
-            <PipeSVG key={pipe.id} pipe={pipe} selected={selectedIds.includes(pipe.id)} />
+            <PipeSVG key={pipe.id} pipe={pipe} selected={selectedIds.includes(pipe.id)} animated={simActive} />
           ))}
         </g>
 
@@ -241,6 +304,8 @@ export const Canvas: React.FC = () => {
                 component={comp}
                 selected={selectedIds.includes(comp.id)}
                 onMouseDown={(e: React.MouseEvent) => handleComponentMouseDown(comp.id, e)}
+                simActive={simActive}
+                simState={componentStates[comp.id]}
               />
             ))}
         </g>

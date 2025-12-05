@@ -2,7 +2,7 @@
 // ComponentSVG – renders an individual hydronic component on the canvas
 // ─────────────────────────────────────────────────────────────────────────────
 import React from 'react';
-import type { HydronicComponent, Position, BaseboardComponent } from '../../types';
+import type { HydronicComponent, Position, BaseboardComponent, ComponentSimState } from '../../types';
 import { PortCircle } from '../PortCircle';
 import {
   BoilerSVG,
@@ -29,10 +29,18 @@ export interface ShapePort {
   cy: number;
 }
 
+/** Props passed to shape components for animation */
+export interface ShapeAnimationProps {
+  simActive?: boolean;
+  simState?: ComponentSimState;
+}
+
 interface Props {
   component: HydronicComponent;
   selected: boolean;
   onMouseDown: (e: React.MouseEvent) => void;
+  simActive?: boolean;
+  simState?: ComponentSimState;
 }
 
 /** Calculate absolute position of a port given component transform */
@@ -90,7 +98,7 @@ function getPortsForComponent(component: HydronicComponent): ShapePort[] {
   }
 }
 
-export const ComponentSVG: React.FC<Props> = ({ component, selected, onMouseDown }) => {
+export const ComponentSVG: React.FC<Props> = ({ component, selected, onMouseDown, simActive = false, simState }) => {
   const { id, type, position, rotation, flippedH, flippedV, name } = component;
 
   const transform = [
@@ -102,7 +110,10 @@ export const ComponentSVG: React.FC<Props> = ({ component, selected, onMouseDown
     .filter(Boolean)
     .join(' ');
 
-  let Shape: React.FC<{ component: HydronicComponent }>;
+  // Animation props to pass to shape components
+  const animProps: ShapeAnimationProps = { simActive, simState };
+
+  let Shape: React.FC<{ component: HydronicComponent } & ShapeAnimationProps>;
   switch (type) {
     case 'boiler_gas':
     case 'boiler_oil':
@@ -142,7 +153,7 @@ export const ComponentSVG: React.FC<Props> = ({ component, selected, onMouseDown
       onMouseDown={onMouseDown}
       style={{ cursor: 'move' }}
     >
-      <Shape component={component} />
+      <Shape component={component} {...animProps} />
       {selected && (
         <rect
           x={-4}
