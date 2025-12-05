@@ -9,9 +9,10 @@ Interactive React + TypeScript + SVG application for designing, configuring, and
 
 ## ✨ Features (MVP)
 
-- **Interactive Demo System** – Pre-built 2-zone hydronic system that starts running on first launch
+- **Interactive Demo System** – Pre-built 3-zone hydronic system that starts running on first launch
 - **SVG Canvas** – Pan/zoom, snap-to-grid, drag-and-drop components
 - **Component Palette** – Boilers, pumps, baseboards, radiant floors, valves, expansion tanks, and more
+- **Auto Layout** – dagre.js–powered hierarchical layout with zone bounding boxes
 - **Building Configuration** – Climate, envelope, insulation, windows/doors, infiltration inputs
 - **Heat-Loss Calculations** – Manual J–style breakdown (walls, windows, doors, ceiling, floor, infiltration)
 - **Zone Management** – Create multiple heating zones with individual load overrides
@@ -21,12 +22,21 @@ Interactive React + TypeScript + SVG application for designing, configuring, and
 
 ## 🎯 Demo System
 
-The application launches with a realistic 2-zone hydronic heating system already configured and **running**:
+The application launches with a realistic 3-zone hydronic heating system already configured and **running**:
 
-- **Zone 1 (Living Room & Kitchen)** – Two 8ft and 6ft baseboards connected in **series**
-- **Zone 2 (Master Bedroom)** – Radiant floor heating in a **parallel** configuration
-- **Components included**: 95% condensing gas boiler, primary circulator pump, microbubble air separator, 4.4-gallon expansion tank, 2-way zone valves
+- **Zone 1 (Floor 1 - Garage)** – Radiant floor heating with 4 loops (low-temp supply at 110°F)
+- **Zone 2 (Floor 2 - Main Living)** – 9 panel radiators across office, living, kitchen, dining, and foyer
+- **Zone 3 (Floor 3 - Bedrooms)** – 9 panel radiators in bedrooms, master suite, office, and bathrooms
+- **Components included**: 150k BTU 95% condensing gas boiler, variable speed primary pump, microbubble air separator, 8-gallon expansion tank, 2-way zone valves
 - **Simulation running**: Watch temperatures and flow rates animate on startup
+
+### Auto Layout Feature
+
+Click the **📐 Layout** button to automatically arrange components using dagre.js hierarchical layout:
+- Mechanical room equipment is grouped on the left
+- Heating zones are spread horizontally (LR flow direction)
+- Zone bounding boxes show visual groupings (toggle with **Zones** checkbox)
+- Supply and return pipes are re-routed with orthogonal paths
 
 ## 🚀 Quick Start
 
@@ -57,6 +67,7 @@ Open **http://localhost:5173** in your browser.
 
 - **React 19** + **TypeScript 5.9** on **Vite 7**
 - **Zustand** + **Immer** for state management
+- **dagre.js** for hierarchical graph layout
 - **SVG** for all component rendering and piping
 - **CSS Modules** for scoped styling
 - **localStorage** persistence with JSON export/import
@@ -65,7 +76,7 @@ Open **http://localhost:5173** in your browser.
 
 ```
 src/
-├── calc/           # Heat-loss & piping calculation modules
+├── calc/           # Heat-loss, piping & auto-layout calculation modules
 ├── components/     # React components
 │   ├── BuildingForm/
 │   ├── Canvas/
@@ -75,6 +86,7 @@ src/
 │   ├── PropertiesPanel/
 │   ├── Toolbar/
 │   ├── ValidationPanel/
+│   ├── ZoneBounds/
 │   └── ZoneList/
 ├── store/          # Zustand store
 └── types/          # TypeScript domain types
@@ -125,7 +137,7 @@ src/
 - [ ] Thermostat calls, outdoor reset, boiler firing rate
 - [ ] Thermal mass approximation
 - [ ] Supply/return temp overlays
-- [ ] Flow animation
+- [x] Flow animation
 - [ ] Metrics dashboard
 
 ### Sprint 5: Templates, Exports, Polish

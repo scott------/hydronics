@@ -1,5 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // PipeSVG – renders pipes/connections on the canvas with animated flow
+// Flow direction is determined by the pipe's waypoints (from startPort to endPort).
+// The animation always moves in the direction the path is drawn (forward along waypoints).
 // ─────────────────────────────────────────────────────────────────────────────
 import React from 'react';
 import type { Pipe } from '../../types';
@@ -8,9 +10,12 @@ interface Props {
   pipe: Pipe;
   selected: boolean;
   animated?: boolean;
+  /** If true, reverse the animation direction (used when actual flow is opposite to path direction) */
+  reverseFlow?: boolean;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
-export const PipeSVG: React.FC<Props> = ({ pipe, selected, animated = false }) => {
+export const PipeSVG: React.FC<Props> = ({ pipe, selected, animated = false, reverseFlow = false, onClick }) => {
   if (pipe.waypoints.length < 2) return null;
 
   const d = pipe.waypoints
@@ -19,14 +24,18 @@ export const PipeSVG: React.FC<Props> = ({ pipe, selected, animated = false }) =
 
   const strokeColor = pipe.pipeType === 'supply' ? '#ef5350' : '#42a5f5';
   const strokeWidth = selected ? 6 : 4;
+  
+  // Flow animation: forward follows the path direction (start → end waypoints)
+  // In hydronic systems, flow direction is: pump outlet → emitters (supply) → back to boiler (return)
+  // Pipes are drawn from their connection's "from" component to "to" component
   const flowClass = animated 
-    ? (pipe.pipeType === 'supply' ? 'flow-supply' : 'flow-return')
+    ? (reverseFlow ? 'flow-reverse' : 'flow-forward')
     : '';
 
   return (
-    <g className="pipe" id={pipe.id}>
+    <g className="pipe" id={pipe.id} style={{ cursor: onClick ? 'pointer' : 'default' }}>
       {/* Background for selection hit area */}
-      <path d={d} fill="none" stroke="transparent" strokeWidth={12} />
+      <path d={d} fill="none" stroke="transparent" strokeWidth={12} onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }} />
       {/* Visible pipe */}
       <path
         d={d}

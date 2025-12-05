@@ -1,0 +1,150 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - button "📂 Open" [ref=e6] [cursor=pointer]
+      - button "💾 Save" [ref=e7] [cursor=pointer]
+      - button "🏠 Demo" [ref=e8] [cursor=pointer]
+    - generic [ref=e10]:
+      - button "⬚ Select" [ref=e11] [cursor=pointer]
+      - button "✋ Pan" [ref=e12] [cursor=pointer]
+      - button "〰 Pipe" [ref=e13] [cursor=pointer]
+    - generic [ref=e15]:
+      - button "➖" [ref=e16] [cursor=pointer]
+      - generic [ref=e17]: 100%
+      - button "➕" [ref=e18] [cursor=pointer]
+    - generic [ref=e20]:
+      - generic [ref=e21] [cursor=pointer]:
+        - checkbox "Grid" [checked] [ref=e22]
+        - text: Grid
+      - generic [ref=e23] [cursor=pointer]:
+        - checkbox "Snap" [checked] [ref=e24]
+        - text: Snap
+    - generic [ref=e26]:
+      - button "⏸ Pause" [ref=e27] [cursor=pointer]
+      - button "⏹ Stop" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]: 🔴 Running
+  - generic [ref=e30]:
+    - complementary [ref=e31]:
+      - generic [ref=e32]:
+        - button "Components" [ref=e33] [cursor=pointer]
+        - button "Building" [ref=e34] [cursor=pointer]
+      - generic [ref=e35]:
+        - heading "Components" [level=3] [ref=e36]
+        - group [ref=e37]:
+          - generic "Heat Sources" [ref=e38] [cursor=pointer]
+          - list [ref=e39]:
+            - listitem [ref=e40]: Gas Boiler
+            - listitem [ref=e41]: Electric Boiler
+        - group [ref=e42]:
+          - generic "Pumps" [ref=e43] [cursor=pointer]
+          - list [ref=e44]:
+            - listitem [ref=e45]: Circulator Pump
+            - listitem [ref=e46]: Variable Pump
+        - group [ref=e47]:
+          - generic "Emitters" [ref=e48] [cursor=pointer]
+          - list [ref=e49]:
+            - listitem [ref=e50]: Baseboard
+            - listitem [ref=e51]: Radiant Floor
+        - group [ref=e52]:
+          - generic "Valves" [ref=e53] [cursor=pointer]
+          - list [ref=e54]:
+            - listitem [ref=e55]: Zone Valve (2-way)
+            - listitem [ref=e56]: Zone Valve (3-way)
+            - listitem [ref=e57]: Mixing Valve
+            - listitem [ref=e58]: Check Valve
+            - listitem [ref=e59]: Ball Valve
+        - group [ref=e60]:
+          - generic "Tanks" [ref=e61] [cursor=pointer]
+          - list [ref=e62]:
+            - listitem [ref=e63]: Expansion Tank
+            - listitem [ref=e64]: Buffer Tank
+            - listitem [ref=e65]: Air Separator
+            - listitem [ref=e66]: Hydraulic Sep.
+        - group [ref=e67]:
+          - generic "Safety" [ref=e68] [cursor=pointer]
+          - list [ref=e69]:
+            - listitem [ref=e70]: Relief Valve
+            - listitem [ref=e71]: Fill Valve
+            - listitem [ref=e72]: Air Vent
+        - group [ref=e73]:
+          - generic "Controls" [ref=e74] [cursor=pointer]
+          - list [ref=e75]:
+            - listitem [ref=e76]: Thermostat
+            - listitem [ref=e77]: Outdoor Reset
+    - img [ref=e80]:
+      - generic [ref=e218]:
+        - generic [ref=e233]: Gas Boiler 150k BTU
+        - generic [ref=e246]: Variable Speed Pump
+        - generic [ref=e247]:
+          - generic [ref=e250]: air_sepa
+          - generic [ref=e256]: Air Separator
+        - generic [ref=e257]:
+          - generic [ref=e258]:
+            - generic [ref=e260]: Air
+            - generic [ref=e261]: Water
+          - generic [ref=e265]: Exp. Tank 8 gal
+        - generic [ref=e277]: Zone 1 Valve (Garage)
+        - generic [ref=e289]: Zone 2 Valve (Floor 2)
+        - generic [ref=e301]: Zone 3 Valve (Floor 3)
+        - generic [ref=e315]: Garage Radiant (4 loops)
+        - generic [ref=e328]: 2F Office
+        - generic [ref=e342]: 2F Living 1
+        - generic [ref=e356]: 2F Living 2
+        - generic [ref=e369]: 2F Kitchen 1
+        - generic [ref=e382]: 2F Kitchen 2
+        - generic [ref=e395]: 2F Dining 1
+        - generic [ref=e408]: 2F Dining 2
+        - generic [ref=e421]: 2F Foyer 1
+        - generic [ref=e434]: 2F Foyer 2
+        - generic [ref=e447]: 3F Bedroom 1
+        - generic [ref=e460]: 3F Bedroom 2
+        - generic [ref=e473]: 3F Bedroom 3
+        - generic [ref=e486]: 3F Bedroom 4
+        - generic [ref=e500]: 3F Master 1
+        - generic [ref=e514]: 3F Master 2
+        - generic [ref=e527]: 3F Office
+        - generic [ref=e540]: 3F Bath 1
+        - generic [ref=e553]: 3F Bath 2
+    - complementary [ref=e554]:
+      - generic [ref=e555]:
+        - heading "System Summary" [level=4] [ref=e556]
+        - table [ref=e557]:
+          - rowgroup [ref=e558]:
+            - row "Total Heat Loss 27,677.921 BTU/hr" [ref=e559]:
+              - cell "Total Heat Loss" [ref=e560]
+              - cell "27,677.921 BTU/hr" [ref=e561]
+            - row "Walls 12,849.964" [ref=e562]:
+              - cell "Walls" [ref=e563]
+              - cell "12,849.964" [ref=e564]
+            - row "Windows 7,125" [ref=e565]:
+              - cell "Windows" [ref=e566]
+              - cell "7,125" [ref=e567]
+            - row "Doors 1,890" [ref=e568]:
+              - cell "Doors" [ref=e569]
+              - cell "1,890" [ref=e570]
+            - row "Ceiling 2,142.857" [ref=e571]:
+              - cell "Ceiling" [ref=e572]
+              - cell "2,142.857" [ref=e573]
+            - row "Floor 3,500" [ref=e574]:
+              - cell "Floor" [ref=e575]
+              - cell "3,500" [ref=e576]
+            - row "Infiltration 170.1" [ref=e577]:
+              - cell "Infiltration" [ref=e578]
+              - cell "170.1" [ref=e579]
+            - row "Recommended Boiler 30,446 BTU/hr" [ref=e580]:
+              - cell "Recommended Boiler" [ref=e581]
+              - cell "30,446 BTU/hr" [ref=e582]
+            - row "System GPM (ΔT=20) 2.8" [ref=e583]:
+              - cell "System GPM (ΔT=20)" [ref=e584]
+              - cell "2.8" [ref=e585]
+        - heading "Zone Loads" [level=5] [ref=e586]
+        - list [ref=e587]:
+          - listitem [ref=e588]: "Floor 1 - Garage (Radiant): 5,271.985 BTU/hr"
+          - listitem [ref=e589]: "Floor 2 - Main Living: 11,861.966 BTU/hr"
+          - listitem [ref=e590]: "Floor 3 - Bedrooms: 10,543.97 BTU/hr"
+  - list [ref=e592]:
+    - listitem [ref=e593]: ⚠️ Missing pressure relief valve
+```

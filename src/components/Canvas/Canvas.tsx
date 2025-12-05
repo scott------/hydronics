@@ -5,17 +5,18 @@ import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { ComponentSVG } from '../ComponentSVG';
 import { PipeSVG } from '../PipeSVG';
+import { ZoneBounds } from '../ZoneBounds';
 import styles from './Canvas.module.css';
 
 // Animation keyframe styles injected into SVG
 const AnimationStyles = () => (
   <style>
     {`
-      @keyframes flowSupply {
+      @keyframes flowForward {
         from { stroke-dashoffset: 24; }
         to { stroke-dashoffset: 0; }
       }
-      @keyframes flowReturn {
+      @keyframes flowReverse {
         from { stroke-dashoffset: 0; }
         to { stroke-dashoffset: 24; }
       }
@@ -37,13 +38,13 @@ const AnimationStyles = () => (
         0%, 100% { fill-opacity: 0.8; }
         50% { fill-opacity: 1; }
       }
-      .flow-supply {
+      .flow-forward {
         stroke-dasharray: 12 12;
-        animation: flowSupply 0.5s linear infinite;
+        animation: flowForward 0.5s linear infinite;
       }
-      .flow-return {
+      .flow-reverse {
         stroke-dasharray: 12 12;
-        animation: flowReturn 0.5s linear infinite;
+        animation: flowReverse 0.5s linear infinite;
       }
       .pump-impeller-spinning {
         transform-origin: 30px 30px;
@@ -95,6 +96,8 @@ export const Canvas: React.FC = () => {
   const simulationRunning = useStore((s) => s.simulation.settings.running);
   const simulationPaused = useStore((s) => s.simulation.settings.paused);
   const componentStates = useStore((s) => s.simulation.componentStates);
+  const showZoneBounds = useStore((s) => s.ui.showZoneBounds);
+  const zoneBounds = useStore((s) => s.ui.zoneBounds);
   
   // Simulation is active when running and not paused
   const simActive = simulationRunning && !simulationPaused;
@@ -258,10 +261,25 @@ export const Canvas: React.FC = () => {
           <rect className={styles.grid} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} fill="url(#grid)" />
         )}
 
+        {/* Zone bounding boxes layer (behind pipes) */}
+        {showZoneBounds && zoneBounds.length > 0 && (
+          <ZoneBounds bounds={zoneBounds} />
+        )}
+
         {/* Pipes layer */}
         <g className="pipes">
           {Object.values(pipes).map((pipe) => (
-            <PipeSVG key={pipe.id} pipe={pipe} selected={selectedIds.includes(pipe.id)} animated={simActive} />
+            <PipeSVG
+              key={pipe.id}
+              pipe={pipe}
+              selected={selectedIds.includes(pipe.id)}
+              animated={simActive}
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                if (!e.shiftKey) setSelection([pipe.id]);
+                else useStore.getState().addToSelection(pipe.id);
+              }}
+            />
           ))}
         </g>
 

@@ -16,6 +16,7 @@ import type {
   SimulationState,
   Position,
   Tool,
+  ZoneBoundsData,
 } from '../types';
 import {
   demoBuildingConfig,
@@ -25,6 +26,12 @@ import {
   demoConnections,
   demoSimulationState,
 } from './demoSystem';
+import {
+  autoLayoutSystem,
+  recalculatePipeWaypoints,
+  calculateZoneBounds,
+  buildComponentZoneMap,
+} from '../calc/autoLayout';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: Generate orthogonal (right-angle) path between two points
@@ -140,6 +147,8 @@ const defaultUI: UIState = {
   gridSize: 20,
   showGrid: true,
   snapToGrid: true,
+  showZoneBounds: false,
+  zoneBounds: [],
   pendingConnection: null,
 };
 
@@ -194,6 +203,11 @@ interface Actions {
   updatePipeConnectionMouse: (position: Position) => void;
   completePipeConnection: (toComponentId: string, toPortId: string, toPosition: Position) => void;
   cancelPipeConnection: () => void;
+
+  // Auto Layout
+  runAutoLayout: (lockedIds?: Set<string>) => void;
+  updateZoneBounds: () => void;
+  toggleZoneBounds: () => void;
 
   // Simulation
   startSimulation: () => void;
@@ -513,6 +527,97 @@ export const useStore = create<StoreState>()(
       cancelPipeConnection: () =>
         set((s) => {
           s.ui.pendingConnection = null;
+        }),
+
+      // ─── Auto Layout ───────────────────────────────────────────────────────
+      runAutoLayout: (lockedIds?: Set<string>) => {
+        const state = get();
+        const result = autoLayoutSystem(
+          state.components,
+          state.pipes,
+          state.connections,
+          state.zones,
+          {
+            direction: 'LR',
+            gridSize: state.ui.gridSize,
+            lockedComponentIds: lockedIds,
+          }
+        );
+
+        // Calculate new pipe waypoints
+        const newWaypoints = recalculatePipeWaypoints(
+          state.components,
+          state.pipes,
+          state.connections,
+          result.componentPositions,
+          state.ui.gridSize
+        );
+
+        set((s) => {
+          // Update component positions
+          for (const [id, pos] of result.componentPositions) {
+            if (s.components[id]) {
+              s.components[id].position = pos;
+            }
+          }
+
+          // Update pipe waypoints
+          for (const [pipeId, waypoints] of newWaypoints) {
+            if (s.pipes[pipeId]) {
+              s.pipes[pipeId].waypoints = waypoints;
+            }
+          }
+
+          // Update zone bounds
+          s.ui.zoneBounds = result.zoneBounds as ZoneBoundsData[];
+          s.ui.showZoneBounds = true;
+        });
+      },
+      updateZoneBounds: () => {
+        const state = get();
+        const componentZoneMap = buildComponentZoneMap(
+          state.components,
+          state.connections,
+          state.zones
+        );
+        const positions = new Map<string, Position>();
+        for (const [id, comp] of Object.entries(state.components)) {
+          positions.set(id, comp.position);
+        }
+        const bounds = calculateZoneBounds(
+          state.components,
+          positions,
+          componentZoneMap,
+          state.zones,
+          40
+        );
+        set((s) => {
+          s.ui.zoneBounds = bounds as ZoneBoundsData[];
+        });
+      },
+      toggleZoneBounds: () =>
+        set((s) => {
+          s.ui.showZoneBounds = !s.ui.showZoneBounds;
+          // Calculate bounds on first show if empty
+          if (s.ui.showZoneBounds && s.ui.zoneBounds.length === 0) {
+            const state = get();
+            const componentZoneMap = buildComponentZoneMap(
+              state.components,
+              state.connections,
+              state.zones
+            );
+            const positions = new Map<string, Position>();
+            for (const [id, comp] of Object.entries(state.components)) {
+              positions.set(id, comp.position);
+            }
+            s.ui.zoneBounds = calculateZoneBounds(
+              state.components,
+              positions,
+              componentZoneMap,
+              state.zones,
+              40
+            ) as ZoneBoundsData[];
+          }
         }),
 
       // ─── Simulation ────────────────────────────────────────────────────────

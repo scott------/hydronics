@@ -8,3 +8,4 @@ export { Palette } from './Palette';
 export { PropertiesPanel } from './PropertiesPanel';
 export { Toolbar } from './Toolbar';
 export { ValidationPanel } from './ValidationPanel';
+export { ZoneBounds } from './ZoneBounds';

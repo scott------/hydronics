@@ -30,7 +30,7 @@ export const RadiantFloorSVG: React.FC<Props> = ({ simActive = false }) => (
       fill="none"
       stroke={simActive ? '#ff5722' : '#ef6c00'}
       strokeWidth={simActive ? 3 : 2}
-      className={simActive ? 'flow-supply' : ''}
+      className={simActive ? 'flow-forward' : ''}
     />
     {/* Heat radiation effect when active */}
     {simActive && (

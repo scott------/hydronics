@@ -385,6 +385,17 @@ export interface PendingConnection {
   currentMousePosition: Position;
 }
 
+/** Zone bounding box for visual grouping */
+export interface ZoneBoundsData {
+  zoneId: string;
+  zoneName: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+}
+
 export interface UIState {
   tool: Tool;
   selectedIds: string[];
@@ -393,6 +404,8 @@ export interface UIState {
   gridSize: number;
   showGrid: boolean;
   snapToGrid: boolean;
+  showZoneBounds: boolean;
+  zoneBounds: ZoneBoundsData[];
   pendingConnection: PendingConnection | null;
 }
 

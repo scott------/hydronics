@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Toolbar – file ops, tool selection, view options, simulation controls
+// Toolbar – file ops, tool selection, view options, layout, simulation controls
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useRef } from 'react';
 import { useStore } from '../../store';
@@ -11,6 +11,7 @@ export const Toolbar: React.FC = () => {
   const zoom = useStore((s) => s.ui.zoom);
   const showGrid = useStore((s) => s.ui.showGrid);
   const snapToGrid = useStore((s) => s.ui.snapToGrid);
+  const showZoneBounds = useStore((s) => s.ui.showZoneBounds);
   const simRunning = useStore((s) => s.simulation.settings.running);
   const simPaused = useStore((s) => s.simulation.settings.paused);
 
@@ -18,6 +19,8 @@ export const Toolbar: React.FC = () => {
   const setZoom = useStore((s) => s.setZoom);
   const toggleGrid = useStore((s) => s.toggleGrid);
   const toggleSnap = useStore((s) => s.toggleSnap);
+  const toggleZoneBounds = useStore((s) => s.toggleZoneBounds);
+  const runAutoLayout = useStore((s) => s.runAutoLayout);
   const resetState = useStore((s) => s.resetState);
   const loadState = useStore((s) => s.loadState);
   const startSimulation = useStore((s) => s.startSimulation);
@@ -118,6 +121,15 @@ export const Toolbar: React.FC = () => {
         <label>
           <input type="checkbox" checked={snapToGrid} onChange={toggleSnap} /> Snap
         </label>
+        <label>
+          <input type="checkbox" checked={showZoneBounds} onChange={toggleZoneBounds} /> Zones
+        </label>
+      </div>
+
+      <div className={styles.divider} />
+
+      <div className={styles.group}>
+        <button onClick={() => runAutoLayout()} title="Auto-arrange components">📐 Layout</button>
       </div>
 
       <div className={styles.divider} />
