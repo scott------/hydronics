@@ -1,0 +1,67 @@
+.panel {
+  width: 240px;
+  background: #fafafa;
+  border-left: 1px solid #ddd;
+  padding: 0.5rem;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}
+.panel h4 {
+  margin: 0 0 0.5rem;
+  text-transform: capitalize;
+}
+.panel h5 {
+  margin: 0.75rem 0 0.25rem;
+}
+.panel label {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.4rem;
+}
+.panel input {
+  padding: 4px 6px;
+  border: 1px solid #aaa;
+  border-radius: 3px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.table td {
+  padding: 2px 4px;
+  border-bottom: 1px solid #eee;
+}
+.table td:last-child {
+  text-align: right;
+  font-weight: 500;
+}
+.zoneList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.8rem;
+}
+.zoneList li {
+  padding: 2px 0;
+}
+.actions {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+}
+.actions button {
+  flex: 1;
+  padding: 4px;
+  font-size: 0.75rem;
+}
+.delete {
+  background: #ffcdd2;
+  border: 1px solid #e57373;
+  color: #c62828;
+  padding: 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 0.5rem;
+}

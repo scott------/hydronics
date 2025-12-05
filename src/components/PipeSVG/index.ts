@@ -1,0 +1,1 @@
+export { PipeSVG } from './PipeSVG';

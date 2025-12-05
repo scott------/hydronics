@@ -1,0 +1,30 @@
+.panel {
+  background: #fff;
+  border-top: 1px solid #ddd;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  max-height: 100px;
+  overflow-y: auto;
+}
+.ok {
+  color: #388e3c;
+}
+.errors,
+.warnings,
+.infos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.errors li {
+  color: #c62828;
+}
+.warnings li {
+  color: #f57c00;
+}
+.infos li {
+  color: #1976d2;
+}

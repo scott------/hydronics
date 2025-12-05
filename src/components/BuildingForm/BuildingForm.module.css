@@ -1,0 +1,32 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.form details {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.form summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 0.35rem;
+}
+
+.form input,
+.form select {
+  padding: 4px 6px;
+  border: 1px solid #aaa;
+  border-radius: 3px;
+}
