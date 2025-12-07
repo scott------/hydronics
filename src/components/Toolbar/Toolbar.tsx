@@ -28,8 +28,10 @@ export const Toolbar: React.FC = () => {
   const stopSimulation = useStore((s) => s.stopSimulation);
   const undo = useStore((s) => s.undo);
   const redo = useStore((s) => s.redo);
-  const canUndo = useStore((s) => s.canUndo());
-  const canRedo = useStore((s) => s.canRedo());
+  const historyIndex = useStore((s) => s._historyIndex);
+  const historyLength = useStore((s) => s._history.length);
+  const canUndo = historyIndex >= 0;
+  const canRedo = historyIndex < historyLength - 1;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
