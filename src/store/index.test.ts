@@ -623,7 +623,7 @@ describe('Store - Undo/Redo', () => {
       useStore.getState().pushHistory();
 
       // State 2: Add second component
-      const id2 = useStore.getState().addComponent(createTestComponent({ name: 'Second' }));
+      useStore.getState().addComponent(createTestComponent({ name: 'Second' }));
       useStore.getState().pushHistory();
 
       // State 3: Add third component

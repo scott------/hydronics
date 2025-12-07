@@ -32,6 +32,7 @@ import {
   calculateZoneBounds,
   buildComponentZoneMap,
 } from '../calc/autoLayout';
+import { runSimulationTick } from '../calc/simulation';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Undo/Redo History
@@ -680,7 +681,15 @@ export const useStore = create<StoreState>()(
         set((s) => {
           if (s.simulation.settings.running && !s.simulation.settings.paused) {
             s.simulation.settings.elapsedSeconds += dt * s.simulation.settings.timeScale;
-            // TODO: Implement thermal calculations per tick
+
+            // Run thermal simulation calculations
+            s.simulation.componentStates = runSimulationTick(
+              s.building,
+              s.zones,
+              s.components,
+              s.connections,
+              s.simulation.settings.outdoorTemp
+            );
           }
         }),
 
