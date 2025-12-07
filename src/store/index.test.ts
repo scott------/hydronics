@@ -524,9 +524,9 @@ describe('Store - Persistence', () => {
     it('clears all data', () => {
       useStore.getState().addComponent(createTestComponent());
       useStore.getState().addZone({ name: 'Test', sqFt: 100, heatLossOverride: null, designWaterTemp: 140, emitterType: null, priority: 1 });
-      
+
       useStore.getState().clearState();
-      
+
       expect(Object.keys(useStore.getState().components).length).toBe(0);
       expect(useStore.getState().zones.length).toBe(0);
       expect(Object.keys(useStore.getState().pipes).length).toBe(0);
@@ -535,11 +535,180 @@ describe('Store - Persistence', () => {
     it('restores default UI state', () => {
       useStore.getState().setZoom(2);
       useStore.getState().setTool('pipe');
-      
+
       useStore.getState().clearState();
-      
+
       expect(useStore.getState().ui.zoom).toBe(1);
       expect(useStore.getState().ui.tool).toBe('select');
+    });
+  });
+});
+
+describe('Store - Undo/Redo', () => {
+  beforeEach(() => {
+    useStore.getState().clearState();
+    // Also reset history
+    useStore.setState({ _history: [], _historyIndex: -1 });
+  });
+
+  describe('pushHistory', () => {
+    it('captures current state snapshot', () => {
+      const id = useStore.getState().addComponent(createTestComponent());
+      useStore.getState().pushHistory();
+
+      expect(useStore.getState()._history.length).toBe(1);
+      expect(useStore.getState()._history[0].components[id]).toBeDefined();
+    });
+
+    it('truncates future when pushing after undo', () => {
+      // Create initial state and push
+      useStore.getState().addComponent(createTestComponent());
+      useStore.getState().pushHistory();
+
+      // Add another component and push
+      useStore.getState().addComponent(createTestComponent({ name: 'Second' }));
+      useStore.getState().pushHistory();
+
+      // Undo to go back
+      useStore.getState().undo();
+
+      // Now push new state - should truncate the future
+      useStore.getState().addComponent(createTestComponent({ name: 'Third' }));
+      useStore.getState().pushHistory();
+
+      // History should be truncated
+      expect(useStore.getState()._history.length).toBeLessThanOrEqual(3);
+    });
+
+    it('limits history size to MAX_HISTORY_SIZE', () => {
+      // Push more than 50 history entries
+      for (let i = 0; i < 55; i++) {
+        useStore.getState().addComponent(createTestComponent({ name: `Comp ${i}` }));
+        useStore.getState().pushHistory();
+      }
+
+      expect(useStore.getState()._history.length).toBeLessThanOrEqual(50);
+    });
+  });
+
+  describe('undo', () => {
+    it('restores previous state', () => {
+      // Add a component and save state
+      const id = useStore.getState().addComponent(createTestComponent());
+      useStore.getState().pushHistory();
+
+      // Remove the component
+      useStore.getState().removeComponent(id);
+      expect(useStore.getState().components[id]).toBeUndefined();
+
+      // Undo - component should be restored
+      useStore.getState().undo();
+      expect(useStore.getState().components[id]).toBeDefined();
+    });
+
+    it('canUndo returns false when no history', () => {
+      expect(useStore.getState().canUndo()).toBe(false);
+    });
+
+    it('canUndo returns true when history exists', () => {
+      useStore.getState().addComponent(createTestComponent());
+      useStore.getState().pushHistory();
+
+      expect(useStore.getState().canUndo()).toBe(true);
+    });
+
+    it('multiple undos walk back through history', () => {
+      // State 1: Add first component
+      const id1 = useStore.getState().addComponent(createTestComponent({ name: 'First' }));
+      useStore.getState().pushHistory();
+
+      // State 2: Add second component
+      const id2 = useStore.getState().addComponent(createTestComponent({ name: 'Second' }));
+      useStore.getState().pushHistory();
+
+      // State 3: Add third component
+      useStore.getState().addComponent(createTestComponent({ name: 'Third' }));
+
+      // Undo back to state 2
+      useStore.getState().undo();
+      expect(Object.keys(useStore.getState().components).length).toBe(2);
+
+      // Undo back to state 1
+      useStore.getState().undo();
+      expect(Object.keys(useStore.getState().components).length).toBe(1);
+      expect(useStore.getState().components[id1]).toBeDefined();
+    });
+  });
+
+  describe('redo', () => {
+    it('restores undone state', () => {
+      // Add component and save
+      const id = useStore.getState().addComponent(createTestComponent());
+      useStore.getState().pushHistory();
+
+      // Make a change
+      useStore.getState().removeComponent(id);
+
+      // Undo
+      useStore.getState().undo();
+      expect(useStore.getState().components[id]).toBeDefined();
+
+      // Redo - component should be removed again
+      useStore.getState().redo();
+      expect(useStore.getState().components[id]).toBeUndefined();
+    });
+
+    it('canRedo returns false when at end of history', () => {
+      useStore.getState().addComponent(createTestComponent());
+      useStore.getState().pushHistory();
+
+      expect(useStore.getState().canRedo()).toBe(false);
+    });
+
+    it('canRedo returns true after undo', () => {
+      useStore.getState().addComponent(createTestComponent());
+      useStore.getState().pushHistory();
+      useStore.getState().undo();
+
+      expect(useStore.getState().canRedo()).toBe(true);
+    });
+  });
+
+  describe('removeComponent pushes history', () => {
+    it('allows undo of component removal', () => {
+      const id = useStore.getState().addComponent(createTestComponent());
+
+      // Remove (this should push history automatically)
+      useStore.getState().removeComponent(id);
+      expect(useStore.getState().components[id]).toBeUndefined();
+
+      // Undo should restore
+      useStore.getState().undo();
+      expect(useStore.getState().components[id]).toBeDefined();
+    });
+  });
+
+  describe('removePipe pushes history', () => {
+    it('allows undo of pipe removal', () => {
+      const pipeId = useStore.getState().addPipe({
+        material: 'copper',
+        size: '3/4',
+        lengthFt: 10,
+        pipeType: 'supply',
+        insulation: 'none',
+        fittings: { elbows90: 0, elbows45: 0, teesThrough: 0, teesBranch: 0, couplings: 0 },
+        waypoints: [{ x: 0, y: 0 }, { x: 100, y: 0 }],
+        startPortId: null,
+        endPortId: null,
+      });
+
+      // Remove (this should push history automatically)
+      useStore.getState().removePipe(pipeId);
+      expect(useStore.getState().pipes[pipeId]).toBeUndefined();
+
+      // Undo should restore
+      useStore.getState().undo();
+      expect(useStore.getState().pipes[pipeId]).toBeDefined();
     });
   });
 });

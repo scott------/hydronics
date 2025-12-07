@@ -34,6 +34,18 @@ import {
 } from '../calc/autoLayout';
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Undo/Redo History
+// ─────────────────────────────────────────────────────────────────────────────
+const MAX_HISTORY_SIZE = 50;
+
+interface HistorySnapshot {
+  zones: Zone[];
+  components: Record<string, HydronicComponent>;
+  pipes: Record<string, Pipe>;
+  connections: Connection[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Helper: Generate orthogonal (right-angle) path between two points
 // ─────────────────────────────────────────────────────────────────────────────
 function generateOrthogonalPath(from: Position, to: Position): Position[] {
@@ -217,13 +229,23 @@ interface Actions {
   setTimeScale: (scale: 1 | 10 | 60 | 3600) => void;
   tickSimulation: (dt: number) => void;
 
+  // Undo/Redo
+  pushHistory: () => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+
   // Persistence
   resetState: () => void;
   clearState: () => void; // For testing - clears to empty state
   loadState: (state: Partial<SystemState>) => void;
 }
 
-export type StoreState = SystemState & Actions;
+export type StoreState = SystemState & Actions & {
+  _history: HistorySnapshot[];
+  _historyIndex: number;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Store definition
@@ -240,6 +262,10 @@ export const useStore = create<StoreState>()(
       connections: demoConnections,
       simulation: defaultSimulation,
       ui: defaultUI,
+
+      // Undo/Redo history
+      _history: [] as HistorySnapshot[],
+      _historyIndex: -1,
 
       // ─── Building ──────────────────────────────────────────────────────────
       setBuilding: (updates) =>
@@ -278,7 +304,8 @@ export const useStore = create<StoreState>()(
         set((s) => {
           if (s.components[id]) Object.assign(s.components[id], updates);
         }),
-      removeComponent: (id) =>
+      removeComponent: (id) => {
+        get().pushHistory();
         set((s) => {
           delete s.components[id];
           // Remove related connections and their pipes
@@ -291,7 +318,8 @@ export const useStore = create<StoreState>()(
           s.connections = s.connections.filter(
             (c) => c.fromComponentId !== id && c.toComponentId !== id
           );
-        }),
+        });
+      },
       moveComponent: (id, position) =>
         set((s) => {
           if (s.components[id]) {
@@ -387,11 +415,13 @@ export const useStore = create<StoreState>()(
         set((s) => {
           if (s.pipes[id]) Object.assign(s.pipes[id], updates);
         }),
-      removePipe: (id) =>
+      removePipe: (id) => {
+        get().pushHistory();
         set((s) => {
           delete s.pipes[id];
           s.connections = s.connections.filter((c) => c.pipeId !== id);
-        }),
+        });
+      },
 
       // ─── Connections ───────────────────────────────────────────────────────
       addConnection: (conn) => {
@@ -531,6 +561,7 @@ export const useStore = create<StoreState>()(
 
       // ─── Auto Layout ───────────────────────────────────────────────────────
       runAutoLayout: (lockedIds?: Set<string>) => {
+        get().pushHistory();
         const state = get();
         const result = autoLayoutSystem(
           state.components,
@@ -652,6 +683,74 @@ export const useStore = create<StoreState>()(
             // TODO: Implement thermal calculations per tick
           }
         }),
+
+      // ─── Undo/Redo ───────────────────────────────────────────────────────────
+      pushHistory: () =>
+        set((s) => {
+          // Create a deep clone snapshot of the current state
+          const snapshot: HistorySnapshot = {
+            zones: JSON.parse(JSON.stringify(s.zones)),
+            components: JSON.parse(JSON.stringify(s.components)),
+            pipes: JSON.parse(JSON.stringify(s.pipes)),
+            connections: JSON.parse(JSON.stringify(s.connections)),
+          };
+
+          // If we're not at the end of history, truncate future states
+          if (s._historyIndex < s._history.length - 1) {
+            s._history = s._history.slice(0, s._historyIndex + 1);
+          }
+
+          // Add new snapshot
+          s._history.push(snapshot);
+
+          // Limit history size
+          if (s._history.length > MAX_HISTORY_SIZE) {
+            s._history = s._history.slice(-MAX_HISTORY_SIZE);
+          }
+
+          // Update index to point to latest
+          s._historyIndex = s._history.length - 1;
+        }),
+
+      undo: () =>
+        set((s) => {
+          if (s._historyIndex >= 0) {
+            // Save current state if this is the first undo (so we can redo back to it)
+            if (s._historyIndex === s._history.length - 1) {
+              const currentSnapshot: HistorySnapshot = {
+                zones: JSON.parse(JSON.stringify(s.zones)),
+                components: JSON.parse(JSON.stringify(s.components)),
+                pipes: JSON.parse(JSON.stringify(s.pipes)),
+                connections: JSON.parse(JSON.stringify(s.connections)),
+              };
+              s._history.push(currentSnapshot);
+            }
+
+            const snapshot = s._history[s._historyIndex];
+            s.zones = JSON.parse(JSON.stringify(snapshot.zones));
+            s.components = JSON.parse(JSON.stringify(snapshot.components));
+            s.pipes = JSON.parse(JSON.stringify(snapshot.pipes));
+            s.connections = JSON.parse(JSON.stringify(snapshot.connections));
+            s._historyIndex--;
+          }
+        }),
+
+      redo: () =>
+        set((s) => {
+          if (s._historyIndex < s._history.length - 1) {
+            s._historyIndex++;
+            const snapshot = s._history[s._historyIndex + 1];
+            if (snapshot) {
+              s.zones = JSON.parse(JSON.stringify(snapshot.zones));
+              s.components = JSON.parse(JSON.stringify(snapshot.components));
+              s.pipes = JSON.parse(JSON.stringify(snapshot.pipes));
+              s.connections = JSON.parse(JSON.stringify(snapshot.connections));
+            }
+          }
+        }),
+
+      canUndo: () => get()._historyIndex >= 0,
+      canRedo: () => get()._historyIndex < get()._history.length - 1,
 
       // ─── Persistence ───────────────────────────────────────────────────────
       resetState: () =>

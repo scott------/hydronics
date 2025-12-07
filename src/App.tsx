@@ -29,6 +29,9 @@ const App: React.FC = () => {
   const components = useStore((s) => s.components);
   const simulationRunning = useStore((s) => s.simulation.settings.running);
   const startSimulation = useStore((s) => s.startSimulation);
+  const undo = useStore((s) => s.undo);
+  const redo = useStore((s) => s.redo);
+  const pushHistory = useStore((s) => s.pushHistory);
 
   const [leftTab, setLeftTab] = useState<'palette' | 'building'>('palette');
 
@@ -41,6 +44,21 @@ const App: React.FC = () => {
     }
   }, []); // Run only on mount
 
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
+
   // Handle drop from palette
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -52,6 +70,7 @@ const App: React.FC = () => {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         const x = (e.clientX - rect.left - panOffset.x) / zoom;
         const y = (e.clientY - rect.top - panOffset.y) / zoom;
+        pushHistory();
         addComponent({
           type: item.type,
           name: item.label,
@@ -66,7 +85,7 @@ const App: React.FC = () => {
         /* ignore */
       }
     },
-    [addComponent, panOffset, zoom]
+    [addComponent, panOffset, zoom, pushHistory]
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {

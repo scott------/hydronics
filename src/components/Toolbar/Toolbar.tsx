@@ -26,6 +26,10 @@ export const Toolbar: React.FC = () => {
   const startSimulation = useStore((s) => s.startSimulation);
   const pauseSimulation = useStore((s) => s.pauseSimulation);
   const stopSimulation = useStore((s) => s.stopSimulation);
+  const undo = useStore((s) => s.undo);
+  const redo = useStore((s) => s.redo);
+  const canUndo = useStore((s) => s.canUndo());
+  const canRedo = useStore((s) => s.canRedo());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -88,6 +92,13 @@ export const Toolbar: React.FC = () => {
           hidden
           onChange={handleImport}
         />
+      </div>
+
+      <div className={styles.divider} />
+
+      <div className={styles.group}>
+        <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">↩ Undo</button>
+        <button onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)">↪ Redo</button>
       </div>
 
       <div className={styles.divider} />
