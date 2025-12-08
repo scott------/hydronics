@@ -33,6 +33,7 @@ import {
   buildComponentZoneMap,
 } from '../calc/autoLayout';
 import { runSimulationTick } from '../calc/simulation';
+import { getTemplateById } from './templates';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Undo/Redo History
@@ -241,6 +242,7 @@ interface Actions {
   resetState: () => void;
   clearState: () => void; // For testing - clears to empty state
   loadState: (state: Partial<SystemState>) => void;
+  loadTemplate: (templateId: string) => void;
 }
 
 export type StoreState = SystemState & Actions & {
@@ -800,6 +802,37 @@ export const useStore = create<StoreState>()(
           if (state.connections) s.connections = state.connections;
           if (state.simulation) Object.assign(s.simulation, state.simulation);
           if (state.ui) Object.assign(s.ui, state.ui);
+        }),
+      loadTemplate: (templateId) =>
+        set((s) => {
+          const template = getTemplateById(templateId);
+          if (!template) return;
+
+          // Clear history when loading template
+          s._history = [];
+          s._historyIndex = -1;
+
+          // Load template data
+          s.building = template.building;
+          s.zones = template.zones;
+          s.components = template.components;
+          s.pipes = template.pipes;
+          s.connections = template.connections;
+
+          // Reset simulation
+          s.simulation = {
+            settings: {
+              running: false,
+              paused: false,
+              timeScale: 1,
+              outdoorTemp: template.building.climate.designOutdoorTemp + 30,
+              elapsedSeconds: 0,
+            },
+            componentStates: {},
+          };
+
+          // Reset UI
+          s.ui = { ...defaultUI };
         }),
     })),
     {

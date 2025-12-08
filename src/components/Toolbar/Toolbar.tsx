@@ -1,12 +1,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Toolbar – file ops, tool selection, view options, layout, simulation controls
 // ─────────────────────────────────────────────────────────────────────────────
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useStore } from '../../store';
 import type { Tool } from '../../types';
+import { TemplateSelector } from '../TemplateSelector';
 import styles from './Toolbar.module.css';
 
 export const Toolbar: React.FC = () => {
+  const [showTemplates, setShowTemplates] = useState(false);
   const tool = useStore((s) => s.ui.tool);
   const zoom = useStore((s) => s.ui.zoom);
   const showGrid = useStore((s) => s.ui.showGrid);
@@ -84,6 +86,7 @@ export const Toolbar: React.FC = () => {
   return (
     <div className={styles.toolbar}>
       <div className={styles.group}>
+        <button onClick={() => setShowTemplates(true)}>📋 New</button>
         <button onClick={() => fileInputRef.current?.click()}>📂 Open</button>
         <button onClick={handleExport}>💾 Save</button>
         <button onClick={handleLoadDemo}>🏠 Demo</button>
@@ -160,6 +163,8 @@ export const Toolbar: React.FC = () => {
           {simRunning ? (simPaused ? '⏸ Paused' : '🔴 Running') : '⏹ Stopped'}
         </span>
       </div>
+
+      <TemplateSelector isOpen={showTemplates} onClose={() => setShowTemplates(false)} />
     </div>
   );
 };

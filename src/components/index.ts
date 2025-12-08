@@ -9,3 +9,4 @@ export { PropertiesPanel } from './PropertiesPanel';
 export { Toolbar } from './Toolbar';
 export { ValidationPanel } from './ValidationPanel';
 export { ZoneBounds } from './ZoneBounds';
+export { TemplateSelector } from './TemplateSelector';
